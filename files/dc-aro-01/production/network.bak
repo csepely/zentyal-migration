@@ -1,0 +1,232 @@
+network/conf/BalanceGateways/keys/blnc1: {
+   "enabled" : 1,
+   "name" : "dhcp-gw-eth0"
+}
+
+network/conf/BalanceGateways/max_id: 1
+
+network/conf/BalanceGateways/order: [
+   "blnc1"
+]
+
+network/conf/DNSResolver/keys/dnsr1: {
+   "readOnly" : 1,
+   "interface" : "eth0.dhclient",
+   "nameserver" : "172.17.0.253"
+}
+
+network/conf/DNSResolver/keys/dnsr2: {
+   "readOnly" : 1,
+   "nameserver" : "172.17.0.253",
+   "interface" : "eth0.dhclient"
+}
+
+network/conf/DNSResolver/max_id: 2
+
+network/conf/DNSResolver/order: []
+
+network/conf/GatewayTable/keys/gtw1: {
+   "ip" : "172.17.0.253",
+   "enabled" : 1,
+   "default" : 1,
+   "auto" : 1,
+   "name" : "dhcp-gw-eth0",
+   "interface" : "eth0",
+   "weight" : 1
+}
+
+network/conf/GatewayTable/max_id: 1
+
+network/conf/GatewayTable/order: [
+   "gtw1"
+]
+
+network/conf/SearchDomain/keys/form: {
+   "domain" : "domain.ad",
+   "interface" : "zentyal.form"
+}
+
+network/conf/ServiceConfigurationTable/max_id: 8
+
+network/conf/ServiceTable/keys/srv1/configuration/keys/srvccnf1: {
+   "readOnly" : 1,
+   "destination_range_type" : "any",
+   "protocol" : "any",
+   "source_range_type" : "any"
+}
+
+network/conf/ServiceTable/keys/srv1/configuration/order: [
+   "srvccnf1"
+]
+
+network/conf/ServiceTable/keys/srv1: {
+   "readOnly" : 1,
+   "name" : "any",
+   "internal" : 0,
+   "printableName" : "Any",
+   "description" : "Any protocol and port"
+}
+
+network/conf/ServiceTable/keys/srv2/configuration/keys/srvccnf2: {
+   "readOnly" : 1,
+   "protocol" : "udp",
+   "destination_range_type" : "any",
+   "source_range_type" : "any"
+}
+
+network/conf/ServiceTable/keys/srv2/configuration/order: [
+   "srvccnf2"
+]
+
+network/conf/ServiceTable/keys/srv2: {
+   "printableName" : "Any UDP",
+   "internal" : 0,
+   "readOnly" : 1,
+   "name" : "any UDP",
+   "description" : "Any UDP port"
+}
+
+network/conf/ServiceTable/keys/srv3/configuration/keys/srvccnf3: {
+   "protocol" : "tcp",
+   "destination_range_type" : "any",
+   "readOnly" : 1,
+   "source_range_type" : "any"
+}
+
+network/conf/ServiceTable/keys/srv3/configuration/order: [
+   "srvccnf3"
+]
+
+network/conf/ServiceTable/keys/srv3: {
+   "name" : "any TCP",
+   "readOnly" : 1,
+   "printableName" : "Any TCP",
+   "internal" : 0,
+   "description" : "Any TCP port"
+}
+
+network/conf/ServiceTable/keys/srv4/configuration/keys/srvccnf4: {
+   "source_range_type" : "any",
+   "readOnly" : 1,
+   "protocol" : "icmp",
+   "destination_range_type" : "any"
+}
+
+network/conf/ServiceTable/keys/srv4/configuration/order: [
+   "srvccnf4"
+]
+
+network/conf/ServiceTable/keys/srv4: {
+   "internal" : 0,
+   "printableName" : "Any ICMP",
+   "name" : "any ICMP",
+   "readOnly" : 1,
+   "description" : "Any ICMP packet"
+}
+
+network/conf/ServiceTable/keys/srv5/configuration/keys/srvccnf5: {
+   "source_range_type" : "any",
+   "protocol" : "tcp",
+   "destination_range_type" : "single",
+   "readOnly" : 1,
+   "destination_single_port" : "8443"
+}
+
+network/conf/ServiceTable/keys/srv5/configuration/order: [
+   "srvccnf5"
+]
+
+network/conf/ServiceTable/keys/srv5: {
+   "readOnly" : 1,
+   "name" : "zentyal_webadmin",
+   "internal" : 1,
+   "printableName" : "Zentyal Webadmin",
+   "description" : "Zentyal Webadmin"
+}
+
+network/conf/ServiceTable/keys/srv6/configuration/keys/srvccnf6: {
+   "destination_range_type" : "single",
+   "protocol" : "tcp",
+   "destination_single_port" : "22",
+   "readOnly" : 1,
+   "source_range_type" : "any"
+}
+
+network/conf/ServiceTable/keys/srv6/configuration/order: [
+   "srvccnf6"
+]
+
+network/conf/ServiceTable/keys/srv6: {
+   "description" : "Secure Shell",
+   "name" : "ssh",
+   "readOnly" : 1,
+   "internal" : 0,
+   "printableName" : "SSH"
+}
+
+network/conf/ServiceTable/keys/srv7/configuration/keys/srvccnf7: {
+   "source_range_type" : "any",
+   "readOnly" : 1,
+   "destination_single_port" : "80",
+   "protocol" : "tcp",
+   "destination_range_type" : "single"
+}
+
+network/conf/ServiceTable/keys/srv7/configuration/order: [
+   "srvccnf7"
+]
+
+network/conf/ServiceTable/keys/srv7: {
+   "printableName" : "HTTP",
+   "internal" : 0,
+   "name" : "HTTP",
+   "readOnly" : 1,
+   "description" : "HyperText Transport Protocol"
+}
+
+network/conf/ServiceTable/keys/srv8/configuration/keys/srvccnf8: {
+   "source_range_type" : "any",
+   "destination_single_port" : "443",
+   "readOnly" : 1,
+   "destination_range_type" : "single",
+   "protocol" : "tcp"
+}
+
+network/conf/ServiceTable/keys/srv8/configuration/order: [
+   "srvccnf8"
+]
+
+network/conf/ServiceTable/keys/srv8: {
+   "printableName" : "HTTPS",
+   "internal" : 0,
+   "name" : "HTTPS",
+   "readOnly" : 1,
+   "description" : "HyperText Transport Protocol over SSL"
+}
+
+network/conf/ServiceTable/max_id: 8
+
+network/conf/ServiceTable/order: [
+   "srv1",
+   "srv4",
+   "srv3",
+   "srv2",
+   "srv7",
+   "srv6",
+   "srv5",
+   "srv8"
+]
+
+network/conf/_serviceModuleStatus: 1
+
+network/conf/default/gateway: gtw1
+
+network/conf/interfaces: {
+   "eth0" : {
+      "alias" : "eth0",
+      "method" : "dhcp",
+      "name" : "eth0",
+      "external" : 0
+   }
+}
+

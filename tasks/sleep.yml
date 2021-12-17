@@ -1,0 +1,5 @@
+---
+- name: "Sleep some time... {{ t }} second(s)..."
+  ansible.builtin.wait_for:
+    timeout: "{{ t | int }}"
+  delegate_to: localhost

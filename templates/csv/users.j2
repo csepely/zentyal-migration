@@ -1,0 +1,16 @@
+{% for key in read_csv_zentyal_users.dict %}
+{% if read_csv_excel_users.dict[ key ] is defined and read_csv_excel_users.dict[ key ].preffered_status != "Remove" %}
+{{- read_csv_zentyal_users.dict[ key ].samAccountName }};
+{{- read_csv_zentyal_users.dict[ key ].dn | replace('OU=m1,OU=Locations,','') | replace('OU', 'CN') }};
+{{- read_csv_zentyal_users.dict[ key ].givenName }};
+{{- read_csv_zentyal_users.dict[ key ].initials }};
+{{- read_csv_zentyal_users.dict[ key ].sn }};
+{{- read_csv_zentyal_users.dict[ key ].displayName }};
+{{- read_csv_zentyal_users.dict[ key ].description }};
+{{- read_csv_zentyal_users.dict[ key ].mail }};
+{{- read_csv_excel_users.dict[ key ].password }};
+{{- read_csv_zentyal_users.dict[ key ].isSystem }};
+{{- read_csv_zentyal_users.dict[ key ].uidNumber }};
+{{- read_csv_zentyal_users.dict[ key ].UserGroups | replace('OU=m1,OU=Locations,','') | replace('OU', 'CN') }};
+{% endif %}
+{% endfor %}

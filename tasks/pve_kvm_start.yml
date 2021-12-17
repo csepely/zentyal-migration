@@ -1,0 +1,9 @@
+---
+- name: Start VM
+  community.general.proxmox_kvm:
+    api_user: root@pam
+    api_password: "{{ ansible_password }}"
+    api_host: 172.17.0.2
+    vmid: "{{ clone_vm.vmid }}"
+    state: "{{ vm_state }}"
+    timeout: 500

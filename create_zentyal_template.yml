@@ -1,0 +1,38 @@
+---
+- name: Install dependencies...
+  import_playbook: docker_cm.yml
+
+- name: Create Zentyal VM template image...
+  hosts: localhost
+  tasks:
+    - name: Creating VM(s) task
+      include_tasks: tasks/proxmox_kvm_vm_clone.yml
+      vars:
+        vm_name: "{{ pve_template_current }}"
+        pve_full: yes
+        pve_template_name: "{{ pve_base_zentyal_image }}"
+
+    - name: Starting VM(s)...
+      include_tasks: tasks/proxmox_kvm_vm_state.yml
+      vars:
+        vm_name: "{{ pve_template_current }}"
+        vm_state: started
+      when: pve_clone_settings.changed
+
+- name: Run zentyal_cloud-init task(s)...
+  hosts: zentyal_base
+  gather_facts: no
+  tasks:
+    - name: Wait for hosts...
+      include_tasks: tasks/wait_for.yml
+      vars:
+        wfc_timeout: 15
+      ignore_errors: yes
+
+    - name: Gather facts...
+      setup:
+      when: hostvars['localhost']['pve_clone_settings'].changed
+
+    - name: Include zentyal_cloud-init task(s)...
+      include_tasks: tasks/zentyal_cloud-init.yml
+      when: hostvars['localhost']['pve_clone_settings'].changed

@@ -1,0 +1,49 @@
+---
+# default vault password: password
+
+# ansible settings
+ansible_user: "{{ vault_ansible_user }}"
+ansible_password: "{{ vault_ansible_password }}"
+ansible_become_method: sudo
+ansible_become_password: "{{ vault_ansible_password }}"
+
+# proxmox
+pve_user: "{{ vault_pve_user }}"
+pve_password: "{{ vault_pve_password }}"
+pve_host: 172.17.0.2
+pve_base_zentyal_image: zentyal-7-2021-09-24-fc
+pve_template_current: "zentyal-7-template-b{{ now( false, '%Y-%m' )  }}"
+pve_node_name: virt-aro-02
+
+# Prefered VM name settings, network, vlan
+vm_list:
+  - name: ad-aro-01
+    bridge: vmbr0
+    interface: net0
+    tag: 6
+    ssh_port: 60022
+  - name: dc-aro-01
+    bridge: vmbr0
+    interface: net0
+    tag: 6
+    ssh_port: 60023
+  - name: dc-aro-02
+    bridge: vmbr0
+    interface: net0
+    tag: 7
+    ssh_port: 60024
+
+vm_suffix: pve
+vm_router: 172.17.0.99
+
+# Zentyal backup files
+z_net_bck:
+  - network.bak
+  - network.state
+
+# Service to be checked, when AD is set up
+sysd_service_name: "samba-ad-dc.service"
+
+# samba domain settings
+smb_domain: 'domain.ad'
+exported_ad_host: 'dc-aro-01-old'

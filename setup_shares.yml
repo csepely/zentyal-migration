@@ -1,0 +1,26 @@
+---
+- name: Install dependencies...
+  import_playbook: docker_cm.yml
+
+- name: Prepare dc_new group...
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create dc_new group
+      include_tasks: tasks/zentyal_env_group.yml
+
+- name: Set up shares...
+  hosts: dc_new
+  tasks:
+    - name: "Upload samba.bak..."
+      ansible.builtin.copy:
+        src: "files/AD/backup/{{ item }}/home/{{ ansible_user }}/samba.bak"
+        dest: "samba.bak"
+      loop: "{{ groups.dc_old | list }}"
+      when: "item | replace('-old', '') is in inventory_hostname"
+
+    - name: Import samba.bak... (only on DC(s)...)
+      become: yes
+      ansible.builtin.script: "redis.pl {{ ansible_facts.user_dir }}/samba.bak"
+      when: "'ad' not in inventory_hostname"
+

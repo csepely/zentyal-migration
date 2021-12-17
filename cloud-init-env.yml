@@ -1,0 +1,6 @@
+---
+- name: Create cloud-init environment
+  hosts: all
+  tasks:
+    - name: Include zentyal_cloud-init task(s)...
+      include_tasks: tasks/zentyal_cloud-init.yml

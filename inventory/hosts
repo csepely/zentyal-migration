@@ -1,0 +1,13 @@
+[dc_old]
+dc-aro-01-old
+dc-aro-02-old
+
+[ad_old]
+ad-aro-01-old
+
+[addc:children]
+ad_old
+dc_old
+
+[zentyal_base]
+zen-aro

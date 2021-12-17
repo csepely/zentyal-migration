@@ -1,0 +1,18 @@
+network/state: {
+   "_temporary_stopped" : 0,
+   "dhcp" : {
+      "eth0" : {
+         "gateway" : "172.17.0.253"
+      }
+   },
+   "ifup" : [
+      "eth0"
+   ],
+   "_serviceConfigured" : 1,
+   "_serviceInstalled" : 1,
+   "_needsSaveAfterConfig" : 0,
+   "interfaces" : {
+      "eth0" : {}
+   }
+}
+

@@ -1,0 +1,10 @@
+---
+- name: DHClient settings
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/dhcp/dhclient.conf
+    regexp: '^send host\-name \='
+    line: send host-name = gethostname();
+    owner: root
+    group: root
+    mode: '0644'

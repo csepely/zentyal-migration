@@ -1,0 +1,53 @@
+---
+- name: Read, compare, write CSV files
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    csv_u_out: "files/csv/users_backup_import.csv"
+    csv_g_out: "files/csv/groups_backup_import.csv"
+
+  vars_prompt:
+    - name: csv_u_0
+      prompt: Zentyal users export file?
+      private: no
+      default: "users-{{ now(false, '%F') }}.csv"
+
+    - name: csv_u_1
+      prompt: Zentyal users password file?
+      default: "users_{{ now(false, '%F') }}.csv"
+      private: no
+
+    - name: csv_g_0
+      prompt: Zentyal groups export file?
+      default: "groups-{{ now(false, '%F') }}.csv"
+      private: no
+
+  tasks:
+    - name: (T) Read exported Zentyal users
+      include_tasks: tasks/csv/read_csv_zentyal_users_export.yml
+
+    - name: (T) Read users from Excel export
+      include_tasks: tasks/csv/read_csv_excel_users_export.yml
+
+    - name: Users with unknown password
+      debug:
+        msg: "{{ item.value.samAccountName }}"
+      loop: "{{ read_csv_zentyal_users.dict | dict2items }}"
+      loop_control:
+        label: "{{ item.value.uidNumber }}"
+      when: read_csv_excel_users.dict[ item.key ] is not defined
+
+    - name: (T) Read exported Zentyal groups
+      include_tasks: tasks/csv/read_csv_zentyal_groups_export.yml
+
+    - name: Create CSV file for Zentyal Users import...
+      ansible.builtin.template:
+        src: templates/csv/users.j2
+        dest: "{{ csv_u_out }}"
+
+    - name: Create CSV file for Zentyal Groups import...
+      ansible.builtin.template:
+        src: templates/csv/groups.j2
+        dest: "{{ csv_g_out }}"

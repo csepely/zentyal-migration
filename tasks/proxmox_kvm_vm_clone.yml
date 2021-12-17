@@ -1,0 +1,19 @@
+---
+- name: "Clone a PVE VM {{ vm_name }}..."
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    clone: "{{ pve_template_name | default(pve_template_current) }}"
+    name: "{{ vm_name }}"
+    node: "{{ pve_node_name }}"
+    full: "{{ pve_full | default('no') }}"
+    format: unspecified
+    timeout: 500
+  register: pve_clone_settings
+
+- name: Wait some time... between cloning...
+  include_tasks: tasks/sleep.yml
+  vars:
+    t: "{{ tt | default(10) }}"
+  when: pve_clone_settings.changed

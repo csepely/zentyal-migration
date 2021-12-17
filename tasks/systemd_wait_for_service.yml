@@ -1,0 +1,15 @@
+---
+- name: "{{ sysd_info | mandatory }}"
+  debug:
+    msg: "{{ sysd_info_msg | default(sysd_info) }}"
+  when:
+    - sysd_info is defined
+
+- name: "Checking systemd service state... {{ sysd_service }} ..."
+  ansible.builtin.service_facts:
+  register: ad_service
+  until: >
+    ad_service.ansible_facts.services[ sysd_service ][ 'state' ] == sysd_state and
+    ad_service.ansible_facts.services[ sysd_service ][ 'status' ] == sysd_status
+  retries: 30
+  delay: 60

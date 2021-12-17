@@ -1,0 +1,318 @@
+---
+- name: Install dependencies...
+  import_playbook: docker_cm.yml
+
+- name: Create Zentyal VM(s)...
+  hosts: localhost
+
+  tasks:
+    - name: Creating VM(s) task
+      include_tasks: tasks/proxmox_kvm_vm_clone.yml
+      vars:
+        vm_name: "{{ item.name }}"
+      loop: "{{ vm_list }}"
+      when: item.name not in groups.proxmox_all_qemu
+
+    - name: Add tag(s) to VM(s) task
+      include_tasks: tasks/proxmox_kvm_vm_tags.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        pve_tags: "dc"
+      loop: "{{ vm_list }}"
+      when: >
+        hostvars[ item.name ].proxmox_tags_parsed is not defined or
+        'dc' not in hostvars[ item.name ].proxmox_tags_parsed and
+        hostvars[ item.name ].proxmox_tags_parsed[0] | length > 0
+
+    - name: Starting VM(s)...
+      include_tasks: tasks/proxmox_kvm_vm_state.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        vm_state: started
+      loop: "{{ vm_list }}"
+      when: item.name not in groups.proxmox_all_running
+
+    - name: Refreshing...
+      include_tasks: tasks/refresh_inventory.yml
+      when: >
+        groups.new_dc is not defined or
+        (groups.new_dc is defined and vm_list | map(attribute='name') | 
+        symmetric_difference(groups.new_dc) | count > 0 )
+
+- name: Setting new Zentyal VM(s)...
+  hosts: new_dc
+  gather_facts: no
+  vars:
+    zentyal_envs:
+      - name: default
+        files: "{{ z_net_bck }}"
+      - name: production
+        files: "{{ z_net_bck }}"
+  tasks:
+    - name: Wait for hosts...
+      include_tasks: tasks/wait_for.yml
+
+    - name: Gather facts...
+      setup:
+
+    - name: System update and reboot
+      include_tasks: tasks/update_and_reboot.yml
+
+    - name: Install zentyal-network
+      become: yes
+      apt:
+        name: zentyal-network
+        state: present
+
+    - name: Checking Zentyal Network module...
+      become: yes
+      ansible.builtin.shell: /usr/bin/zs network status | grep DISABLED
+      register: zs
+      failed_when: zs.rc == 2
+
+    - name: Update /etc/hosts file...
+      become: yes
+      ansible.builtin.command: "/usr/share/zentyal/change-hostname {{ inventory_hostname }} {{ smb_domain }}"
+      when: zs.rc == 0
+
+    - name: Upload Zentyal Environment Network config(s)
+      ansible.builtin.copy:
+        src: "{{ inventory_hostname }}/{{ item.0.name }}/{{ item.1 }}"
+        dest: "{{ ansible_facts.user_dir }}/{{ inventory_hostname }}/{{ item.0.name }}/"
+      when: zs.rc == 0
+      loop: "{{ zentyal_envs | subelements('files') }}"
+
+    - name: Restore default Zentyal Network config
+      become: yes
+      ansible.builtin.script: "redis.pl {{ ansible_facts.user_dir }}/{{ inventory_hostname }}/default/{{ item }}"
+      when: zs.rc == 0
+      loop: "{{ z_net_bck }}"
+
+    - name: 'Restart Zentyal network module... #1'
+      include_tasks: tasks/zentyal_module_status.yml
+      vars:
+#        z_module: network
+        z_status: restart
+#        z_restart: false
+        show: false
+      when: zs.rc == 0
+
+    - name: Reboot VM(s)...
+      become: yes
+      ansible.builtin.reboot:
+#        reboot_timeout: 60
+      when: zs.rc == 0
+
+    - name: zentyal-dns zentyal-firewall zentyal-ntp zentyal-samba
+      become: yes
+      ansible.builtin.apt:
+        name:
+          - zentyal-dns
+          - zentyal-firewall
+          - zentyal-ntp
+          - zentyal-samba
+        state: present
+
+    - name: Restore production network config
+      become: yes
+      ansible.builtin.script: "redis.pl {{ ansible_facts.user_dir }}/{{ inventory_hostname }}/production/{{ item }}"
+      when: zs.rc == 0
+      loop: "{{ z_net_bck }}"
+
+    - name: 'Restart Zentyal network module... #2'
+      include_tasks: tasks/zentyal_module_status.yml
+      vars:
+#        z_module: network
+        z_status: restart
+#        z_restart: false
+        show: false
+      when: zs.rc == 0
+
+- name: PVE/VM shutdown, set vlan(s), then start...
+  hosts: localhost
+  vars:
+    need_refresh_vm_list: []
+
+  tasks:
+    - name: Refresh required?
+      ansible.builtin.set_fact:
+        need_refresh_vm_list: "{{ need_refresh_vm_list }} + [ {{ item.name }} ]"
+      loop: "{{ vm_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: >
+        hostvars[ item.name ].proxmox_net0.tag is not defined or
+        hostvars[ item.name ].proxmox_net0.tag | int != item.tag | int
+
+    - name: Debug hostvars
+      debug:
+        msg: |
+          {{ hostvars[ item.name ].proxmox_net0.tag }}
+          {{ item.tag }}
+      loop: "{{ vm_list }}"
+      tags: never
+
+    - name: Shutting down VM(s)...
+      include_tasks: tasks/proxmox_kvm_vm_state.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        vm_state: stopped
+      loop: "{{ vm_list }}"
+      when: >
+        hostvars[ item.name ].proxmox_net0.tag is not defined or
+        hostvars[ item.name ].proxmox_net0.tag | int != item.tag | int
+
+    - name: Setting vlan tag(s)...
+      include_tasks: tasks/proxmox_kvm_vm_network.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        pve_bridge: "{{ item.bridge }}"
+        pve_interface: "{{ item.interface }}"
+        pve_vlan_id: "{{ item.tag }}"
+      loop: "{{ vm_list }}"
+      when: >
+        hostvars[ item.name ].proxmox_net0.tag is not defined or
+        hostvars[ item.name ].proxmox_net0.tag | int != item.tag | int
+
+    - name: Refreshing...
+      include_tasks: tasks/refresh_inventory.yml
+      when: need_refresh_vm_list | count > 0
+
+    - name: Starting VM(s)...
+      include_tasks: tasks/proxmox_kvm_vm_state.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        vm_state: started
+      loop: "{{ vm_list }}"
+      when: item.name not in groups.proxmox_all_running
+
+    - name: Remove tag(s) from VM(s) task
+      include_tasks: tasks/proxmox_kvm_vm_tags.yml
+      vars:
+        vm_name: "{{ item.name }}"
+
+      loop: "{{ vm_list }}"
+      when:
+        - hostvars[ item.name ].proxmox_tags_parsed is defined
+        - "'dc' is in hostvars[ item.name ].proxmox_tags_parsed"
+
+- name: Create backup AD host group
+  hosts: localhost
+  tags: never
+  gather_facts: no
+  tasks:
+    - name: Create group...
+      add_host:
+        name: "{{ exported_ad_host }}"
+        groups: dc_backup_grp
+
+- name: Export AD users/groups
+  hosts: dc_old
+  tags: ad_users_backup
+  tasks:
+    - name: Create AD backup
+      become: yes
+      ansible.builtin.shell:
+        argv:
+          - "/usr/share/zentyal-samba/{{ item }}-export.pl"
+          - "{{ item }}-{{ ansible_date_time.date }}.csv"
+        chdir: "{{ ansible_facts.user_dir }}"
+        creates: "{{ ansible_facts.user_dir }}/{{ item }}-{{ ansible_date_time.date }}.csv"
+      loop:
+        - users
+        - groups
+      when: inventory_hostname == exported_ad_host
+
+    - name: Download AD users/groups backup file
+      ansible.builtin.fetch:
+        src: "{{ ansible_facts.user_dir }}/{{ item }}-{{ ansible_date_time.date }}.csv"
+        dest: files/AD/backup
+      loop:
+        - users
+        - groups
+      when: inventory_hostname == exported_ad_host
+
+- name: Backup old Zentyals
+  hosts: dc_old
+  tags: zentyal_old_backups
+
+  tasks:
+    - name: Backup dir content
+      become: yes
+      ansible.builtin.find:
+        paths: /var/lib/zentyal/conf/backups/
+        patterns: "*.tar"
+      register: backup_files
+
+    - name: Make backup
+      become: yes
+      ansible.builtin.shell:
+        argv:
+          - /usr/share/zentyal/make-backup
+          - --destination
+          - "{{ ansible_date_time.date }}-{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}{{ ansible_date_time.second }}.tar"
+      when: >
+        backup_files.files | count == 0 or
+        ( now().date() - now().fromtimestamp( (( backup_files.files | max(attribute='mtime') ).mtime | int) ).date() ).days > 1
+      register: backup_done
+
+    - name: Debug backup_done
+      tags: never
+      debug:
+        var: backup_done.changed
+
+    - name: backup_done check
+      tags: never
+      vars:
+        backup_file: '{{ ( backup_done.changed ) | ternary( ( backup_done.cmd[2] ), ( backup_files.files | max(attribute="mtime") ).path ) | basename }}'
+      debug:
+        msg: "/var/lib/zentyal/conf/backups/{{ backup_file }}"
+#        var: backup_done
+
+    - name: Prepare samba backup file
+#      tags: never
+      become: yes
+
+      vars:
+        backup_file: '{{ ( backup_done.changed ) | ternary( ( backup_done.cmd[2] ), ( backup_files.files | max(attribute="mtime") ).path ) | basename }}'
+
+      ansible.builtin.shell:
+        cmd: >-
+          tar --occurrence=1
+          -xf
+          /var/lib/zentyal/conf/backups/{{ backup_file }}
+          eboxbackup/files.tgz
+          --to-command='tar -O -xvzf - ./samba.bak/samba.bak' |
+          tail -n +13 > samba.bak
+        chdir: "{{ ansible_facts.user_dir }}"
+
+    - name: Copy Zentyal backups - samba module
+      become: yes
+      ansible.builtin.fetch:
+        src: "{{ ansible_facts.user_dir }}/samba.bak"
+        dest: files/AD/backup
+
+- name: Setup dynamic host names...
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Create dc_new group
+      include_tasks: tasks/zentyal_env_group.yml
+
+- name: Set new production environment
+  hosts: dc_new
+  gather_facts: no
+  tasks:
+    - name: Wait for hosts...
+      include_tasks: tasks/wait_for.yml
+
+    - name: Gather facts...
+      setup:
+
+    - debug: var=ansible_facts
+      when: debug_dc_new is defined
+
+    - name: Visit your Zentyal host...
+      ansible.builtin.debug:
+        msg: "Visit ({{ inventory_hostname }}) at https://{{ ansible_facts.default_ipv4.address }}:8443/"

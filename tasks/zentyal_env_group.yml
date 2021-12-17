@@ -1,0 +1,8 @@
+---
+- name: Set up new dc group...
+  add_host:
+    name: "{{ item.name }}-{{ vm_suffix }}-t{{ item.tag }}"
+    groups: dc_new
+    ansible_port: "{{ item.ssh_port }}"
+    ansible_host: "{{ vm_router }}"
+  loop: "{{ vm_list }}"

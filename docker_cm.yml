@@ -1,0 +1,9 @@
+---
+- name: Install additional packages inside Docker container
+  hosts: localhost
+  tasks:
+    - name: proxmoxer
+      pip:
+        name:
+          - proxmoxer
+          - requests

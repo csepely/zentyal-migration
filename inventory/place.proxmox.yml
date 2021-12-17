@@ -1,0 +1,8 @@
+plugin: community.general.proxmox
+url: https://172.17.0.2:8006
+validate_certs: no
+want_facts: yes
+user: info@pve
+password: password
+groups:
+  new_dc: "'dc' in (proxmox_tags_parsed|list)"

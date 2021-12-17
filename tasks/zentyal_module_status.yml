@@ -1,0 +1,17 @@
+---
+- name: Save all changes...
+  become: yes
+  ansible.builtin.shell: /usr/share/zentyal/global-action --action saveAllModules
+
+- name: "Change Zentyal module {{ z_module | default('') }} status {{ z_status }}..."
+  become: yes
+  ansible.builtin.shell: /usr/bin/zs {{ z_module | default('')}} {{ z_status }}
+  register: zs_out
+  when: z_restart | default('true')
+  timeout: 30
+  ignore_errors: yes
+
+- name: Debug info...
+  debug:
+    var: zs_out
+  when: show | default('true')

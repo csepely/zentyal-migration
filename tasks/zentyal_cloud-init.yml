@@ -1,0 +1,105 @@
+---
+- name: Grub settings...
+  include_tasks: tasks/grub-serial.yml
+
+- name: System update and reboot
+  include_tasks: tasks/update_and_reboot.yml
+
+- name: Install cloud-init
+  become: yes
+  ansible.builtin.apt:
+    name: cloud-init
+    state: present
+
+- name: Purge zentyal-network
+  become: yes
+  ansible.builtin.apt:
+    name: zentyal-network
+    state: absent
+    purge: yes
+
+- name: Set dhclient...
+  include_tasks: tasks/dhclient.yml
+
+- name: Remove lease file
+  become: yes
+  ansible.builtin.file:
+    path: /var/lib/dhcp/dhclient.eth0.leases
+    state: absent
+
+- name: cloud-config
+  become: yes
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud.cfg.d/00-cloud-config.cfg
+    content: |
+      #cloud-config
+      users: {}
+      grub_dpkg:
+        enabled: false
+      apt_preserve_sources_list: true
+      package_update: false
+      package_upgrade: false
+      preserve_hostname: false
+      manage_etc_hosts: true
+      network:
+        config: disabled
+      power_state:
+        delay: now
+        mode: reboot
+        message: Bye Bye
+        timeout: 30
+        condition: True
+      cloud_init_modules:
+       - seed_random
+       - bootcmd
+       - write-files
+       - set_hostname
+       - update_hostname
+       - update_etc_hosts
+       - ca-certs
+       - rsyslog
+       - ssh
+
+      cloud_config_modules:
+      # Emit the cloud config ready event
+      # this can be used by upstart jobs for 'start on cloud-config'.
+       - emit_upstart
+       - ssh-import-id
+       - set-passwords
+       - apt-pipelining
+       - apt-configure
+       - ntp
+       - disable-ec2-metadata
+       - runcmd
+
+      # The modules that run in the 'final' stage
+      cloud_final_modules:
+       - scripts-vendor
+       - scripts-per-once
+       - scripts-per-boot
+       - scripts-per-instance
+       - scripts-user
+       - ssh-authkey-fingerprints
+       - keys-to-console
+       - final-message
+       - power-state-change
+
+- name: Clear machine-id
+  become: yes
+  ansible.builtin.shell: echo -n '' > /etc/machine-id
+
+- name: Disable netplan interface settings
+  become: yes
+  ansible.builtin.replace:
+    path: /etc/netplan/01-netcfg.yaml
+    regexp: "{{ item }}"
+    replace: '# \g<0>'
+  loop:
+    - '^(.+)renderer'
+    - '^(.+)ethernets'
+    - '^(.+)eth0'
+    - '^(.+)dhcp4'
+
+- name: Power off VM
+  become: yes
+  community.general.shutdown:

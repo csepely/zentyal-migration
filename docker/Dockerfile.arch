@@ -1,0 +1,8 @@
+FROM archlinux:latest
+RUN pacman -Syu --noconfirm ansible python-pip && \
+pacman -Scc --noconfirm
+COPY ./entrypoint.sh /entrypoint.sh
+VOLUME ["/tmp/playbook"]
+WORKDIR /tmp/playbook
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["playbook", "--version"]

@@ -1,0 +1,43 @@
+---
+- name: Install dependencies...
+  import_playbook: docker_cm.yml
+
+- name: Prepare dc_new group...
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Create dc_new group
+      include_tasks: tasks/zentyal_env_group.yml
+
+- name: Import AD users, groups...
+  hosts: dc_new
+  tasks:
+    - name: Update and reboot...
+      include_tasks: tasks/update_and_reboot.yml
+
+    - name: Upload AD user, group files...
+      ansible.builtin.copy:
+        src: "files/csv/{{ item }}_backup_import.csv"
+        dest: "{{ item }}_backup_import.csv"
+      loop:
+        - users
+        - groups
+      when: "'ad' in inventory_hostname"
+
+    - name: Import groups, users...
+      become: yes
+      ansible.builtin.command: "/usr/share/zentyal-samba/{{ item }}-import.pl {{ ansible_facts.user_dir }}/{{ item }}_backup_import.csv"
+      loop:
+        - groups
+        - users
+      register: import_out
+      when: "'ad' in inventory_hostname"
+
+    - name: Check import error(s)...
+      debug:
+        var: import_out
+      when: import_out is failed
+
+    - name: Join your DC(s)...
+      debug:
+        msg: "Set up your additional domain controllers..."

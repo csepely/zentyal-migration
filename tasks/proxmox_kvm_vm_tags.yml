@@ -1,0 +1,18 @@
+---
+- name: "Setting tag(s) on {{ vm_name }}..."
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    name: "{{ vm_name }}"
+    node: "{{ pve_node_name }}"
+    proxmox_default_behavior: no_defaults
+    tags: "{{ pve_tags | default('[]') }}"
+    update: yes
+  register: pve_tag_settings
+
+- name: Wait some time... between tag settings...
+  include_tasks: tasks/sleep.yml
+  vars:
+    t: "{{ tt | default(5) }}"
+  when: pve_tag_settings.changed

@@ -1,0 +1,4 @@
+---
+- name: "Wait for host(s)..."
+  wait_for_connection:
+    timeout: "{{ wfc_timeout | default(600) }}"

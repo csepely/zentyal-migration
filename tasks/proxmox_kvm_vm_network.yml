@@ -1,0 +1,29 @@
+---
+- name: "Setting network properties on {{ vm_name }}..."
+  community.general.proxmox_nic:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    name: "{{ vm_name }}"
+    bridge: "{{ pve_bridge }}"
+    interface: "{{ pve_interface }}"
+    tag: "{{ pve_vlan_id }}"
+  register: pve_network_settings
+
+- name: Wait some time... between network settings...
+  include_tasks: tasks/sleep.yml
+  vars:
+    t: "{{ tt | default(5) }}"
+  when: pve_network_settings.changed
+
+#- name: "Setting network properties on {{ vm_name }}..."
+#  community.general.proxmox_kvm:
+#    api_user: "{{ pve_user }}"
+#    api_password: "{{ ansible_password }}"
+#    api_host: "{{ pve_host }}"
+#    name: "{{ vm_name }}"
+#    node: "{{ pve_node_name }}"
+#    proxmox_default_behavior: no_defaults
+#    net: "{{ vm_net_if_settings }}"
+#    update: yes
+

@@ -1,0 +1,28 @@
+---
+- name: apt-get update, dist-upgrade
+  become: yes
+  async: 1800
+  poll: 10
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: yes
+    cache_valid_time: 3600
+  register: apt_out
+  ignore_errors: yes
+#  failed_when: "apt_out.rc > 100"
+
+- name: Show apt_out
+  debug:
+    var: apt_out
+  when: apt_out is failed
+
+# dpkg --configure -a
+- name: Executing dpkg --configure -a ...
+  become: yes
+  ansible.builtin.command: dpkg --configure -a
+  register: dpkg_out
+  delay: 15
+  until: dpkg_out.rc == 0
+
+- name: Check if reboot required
+  include_tasks: tasks/reboot.yml

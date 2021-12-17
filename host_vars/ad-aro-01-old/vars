@@ -1,0 +1,4 @@
+---
+# default vault password: password
+ansible_user: "{{ vault_ansible_user }}"
+ansible_password: "{{ vault_ansible_password }}"

@@ -1,0 +1,9 @@
+{% for key in read_csv_zentyal_groups.dict %}
+{{- read_csv_zentyal_groups.dict[ key ].name }};
+{{- read_csv_zentyal_groups.dict[ key ].dn | replace('OU=m1,OU=Locations,','') | replace('OU', 'CN') }};
+{{- read_csv_zentyal_groups.dict[ key ].description }};
+{{- read_csv_zentyal_groups.dict[ key ].mail }};
+{{- read_csv_zentyal_groups.dict[ key ].isSecurityGroup }};
+{{- read_csv_zentyal_groups.dict[ key ].isSystem }};
+{{- read_csv_zentyal_groups.dict[ key ].gid }};
+{% endfor %}

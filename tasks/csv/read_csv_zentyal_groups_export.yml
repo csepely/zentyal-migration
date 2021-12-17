@@ -1,0 +1,19 @@
+---
+- name: "Read CSV, from Zentyal Groups export..."
+  community.general.read_csv:
+    key: name
+    delimiter: ";"
+    fieldnames:
+      - name
+      - dn
+      - description
+      - mail
+      - isSecurityGroup
+      - isSystem
+      - gid
+    path: "files/AD/backup/{{ exported_ad_host }}/home/{{ ansible_user }}/{{ csv_g_0 }}"
+  register: read_csv_zentyal_groups
+- name: Debug
+  debug:
+    var: read_csv_zentyal_groups
+  when: debug_csv is defined

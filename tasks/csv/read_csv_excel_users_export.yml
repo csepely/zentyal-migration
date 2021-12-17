@@ -1,0 +1,21 @@
+---
+- name: "Read Excel exported CSV..."
+  community.general.read_csv:
+    delimiter: ";"
+    fieldnames:
+      - id
+      - userName
+      - realName
+      - password
+      - status
+      - comment
+      - preffered_status
+      - other_comment
+      - extra
+    path: "files/csv/{{ csv_u_1 }}"
+    key: userName
+  register: read_csv_excel_users
+- name: Debug
+  debug:
+    var: read_csv_excel_users
+  when: debug_csv is defined

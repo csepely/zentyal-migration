@@ -1,0 +1,23 @@
+---
+- name: Install dependencies...
+  import_playbook: docker_cm.yml
+
+- name: Stop and Remove VM(s)...
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Stoping VM(s)...
+      include_tasks: tasks/proxmox_kvm_vm_state.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        vm_state: stopped
+        tt: 10
+      loop: "{{ vm_list }}"
+
+    - name: Removing VM(s)...
+      include_tasks: tasks/proxmox_kvm_vm_state.yml
+      vars:
+        vm_name: "{{ item.name }}"
+        vm_state: absent
+        tt: 5
+      loop: "{{ vm_list }}"

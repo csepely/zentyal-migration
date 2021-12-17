@@ -1,0 +1,16 @@
+---
+- name: "Change VM state... {{ vm_name }} - {{ vm_state }}"
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    name: "{{ vm_name }}"
+    state: "{{ vm_state }}"
+    timeout: 500
+  register: pve_state_settings
+
+- name: Wait some time... between VM state(s)
+  include_tasks: tasks/sleep.yml
+  vars:
+    t: "{{ tt | default(10) }}"
+  when: pve_state_settings.changed

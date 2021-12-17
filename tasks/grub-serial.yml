@@ -1,0 +1,23 @@
+---
+- name: 'Grub serial console settings #1'
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: '^GRUB_CMDLINE_LINUX=""', line: 'GRUB_CMDLINE_LINUX="console=tty1 console=ttyS0,115200"' }
+    - { regexp: '^#GRUB_TERMINAL=console', line: 'GRUB_TERMINAL="console serial"' }
+
+- name: 'Grub serial console settings #2'
+  become: yes
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: 'GRUB_TERMINAL="console serial"', line: 'GRUB_SERIAL_COMMAND="serial --speed=115200"' }
+
+- name: Update grub config
+  become: yes
+  ansible.builtin.command: update-grub
+
